@@ -1,76 +1,107 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP Eligibility Checker</title>
+    <title>Magna Bulk Checker</title>
     <style>
-        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f9; }
-        textarea { width: 100%; height: 150px; margin-bottom: 10px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
-        button { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        button:hover { background-color: #0056b3; }
-        #results { margin-top: 20px; }
-        .result-item { padding: 10px; border-bottom: 1px solid #ddd; background: white; margin-bottom: 5px; border-radius: 5px; }
-        .elig { color: green; font-weight: bold; }
-        .not-elig { color: red; font-weight: bold; }
-        .loading { color: orange; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; padding: 40px; }
+        .container { max-width: 800px; margin: auto; background: #1e293b; padding: 25px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); }
+        h2 { margin-top: 0; color: #38bdf8; }
+        textarea { 
+            width: 100%; height: 150px; background: #0f172a; color: #38bdf8; 
+            border: 1px solid #334155; border-radius: 8px; padding: 12px; 
+            font-family: monospace; resize: vertical; box-sizing: border-box;
+        }
+        button { 
+            background: #38bdf8; color: #0f172a; border: none; padding: 12px 24px; 
+            font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px; width: 100%;
+        }
+        button:hover { background: #0ea5e9; }
+        #log { 
+            margin-top: 20px; background: #0f172a; padding: 15px; border-radius: 8px; 
+            max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 13px;
+            border: 1px solid #334155;
+        }
+        .elig { color: #4ade80; font-weight: bold; }
+        .not-elig { color: #f87171; }
+        .process { color: #fbbf24; }
     </style>
 </head>
 <body>
 
-    <h2>ESP Project Eligibility Checker</h2>
-    <p>Masukkan alamat wallet (satu per baris):</p>
-    <textarea id="walletInput" placeholder="0x123...&#10;0x456..."></textarea>
-    <br>
-    <button onclick="checkEligibility()">Cek Eligibility</button>
+<div class="container">
+    <h2>Magna Eligibility Checker</h2>
+    <p style="color: #94a3b8;">Masukkan alamat wallet (satu alamat per baris):</p>
+    
+    <textarea id="walletInput" placeholder="0x123...&#10;0xabc..."></textarea>
+    
+    <button onclick="startCheck()">MULAI PENGECEKAN</button>
 
-    <div id="results"></div>
+    <div id="log">Hasil akan muncul di sini...</div>
+</div>
 
-    <script>
-        async function checkEligibility() {
-            const input = document.getElementById('walletInput').value;
-            const addresses = input.split('\n').map(addr => addr.trim()).filter(addr => addr !== "");
-            const resultsDiv = document.getElementById('results');
-            
-            resultsDiv.innerHTML = "<h3>Hasil:</h3>";
+<script>
+    async function startCheck() {
+        const input = document.getElementById('walletInput').value;
+        const log = document.getElementById('log');
+        const wallets = input.split('\n').map(w => w.trim()).filter(w => w.length > 0);
 
-            if (addresses.length === 0) {
-                alert("Masukkan minimal satu wallet!");
-                return;
-            }
-
-            for (let address of addresses) {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'result-item';
-                itemDiv.innerHTML = `Checking <strong>${address}</strong>... <span class="loading">Sabar ya...</span>`;
-                resultsDiv.appendChild(itemDiv);
-
-                try {
-                    // API URL berdasarkan contoh yang Anda berikan
-                    const url = `https://cors-anywhere.herokuapp.com/https://portal-api.magna.so/api/v2/bbe62884-b0e3-4328-a20c-0544351402b5/submission/accounts?address=${address}`;
-                    
-                    const response = await fetch(url);
-                    const data = await response.json();
-
-                    // Mencari status isEligible dari array accounts
-                    const accountInfo = data.accounts.find(acc => acc.value.toLowerCase() === address.toLowerCase());
-                    
-                    if (accountInfo) {
-                        const isElig = accountInfo.isEligible;
-                        itemDiv.innerHTML = `
-                            Wallet: <strong>${address}</strong> | 
-                            Status: <span class="${isElig ? 'elig' : 'not-elig'}">${isElig ? 'ELIGIBLE' : 'NOT ELIGIBLE'}</span>
-                        `;
-                    } else {
-                        itemDiv.innerHTML = `Wallet: <strong>${address}</strong> | <span class="not-elig">Data tidak ditemukan</span>`;
-                    }
-
-                } catch (error) {
-                    itemDiv.innerHTML = `Wallet: <strong>${address}</strong> | <span class="not-elig">Error (Cek Koneksi/CORS)</span>`;
-                    console.error(error);
-                }
-            }
+        if (wallets.length === 0) {
+            alert("Silahkan masukkan minimal satu wallet!");
+            return;
         }
-    </script>
+
+        log.innerHTML = `Mengecek ${wallets.length} wallet...<br><br>`;
+
+        for (let i = 0; i < wallets.length; i++) {
+            const wallet = wallets[i];
+            const currentLine = document.createElement('div');
+            currentLine.innerHTML = `[${i + 1}/${wallets.length}] Mengecek: ${wallet} ... <span class="process">Wait</span>`;
+            log.appendChild(currentLine);
+
+            try {
+                // Menggunakan corsproxy.io untuk menembus batasan CORS browser
+                const targetUrl = `https://portal-api.magna.so/api/v2/bbe62884-b0e3-4328-a20c-0544351402b5/submission/accounts?address=${wallet}`;
+                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+
+                const response = await fetch(proxyUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                
+                // Logika pengecekan data
+                // Catatan: Jika API Magna tidak memfilter berdasarkan ?address=, 
+                // dia akan mengembalikan array. Kita cari yang match atau ambil yang pertama.
+                const account = data.accounts.find(acc => acc.value.toLowerCase() === wallet.toLowerCase()) || data.accounts[0];
+
+                if (account) {
+                    const isElig = account.isEligible;
+                    currentLine.innerHTML = `[${i + 1}/${wallets.length}] ${wallet} : <span class="${isElig ? 'elig' : 'not-elig'}">${isElig ? '✅ ELIGIBLE' : '❌ NOT ELIG'}</span>`;
+                } else {
+                    currentLine.innerHTML = `[${i + 1}/${wallets.length}] ${wallet} : <span class="not-elig">DATA TIDAK DITEMUKAN</span>`;
+                }
+
+            } catch (err) {
+                currentLine.innerHTML = `[${i + 1}/${wallets.length}] ${wallet} : <span class="not-elig">ERROR: ${err.message}</span>`;
+            }
+
+            // Scroll otomatis ke bawah
+            log.scrollTop = log.scrollHeight;
+
+            // Delay 500ms agar tidak terkena rate limit
+            await new Promise(r => setTimeout(r, 500));
+        }
+        
+        log.innerHTML += "<br><b>--- Pengecekan Selesai ---</b>";
+    }
+</script>
+
 </body>
 </html>
