@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP Eligibility Checker</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f9; }
+        textarea { width: 100%; height: 150px; margin-bottom: 10px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        #results { margin-top: 20px; }
+        .result-item { padding: 10px; border-bottom: 1px solid #ddd; background: white; margin-bottom: 5px; border-radius: 5px; }
+        .elig { color: green; font-weight: bold; }
+        .not-elig { color: red; font-weight: bold; }
+        .loading { color: orange; }
+    </style>
+</head>
+<body>
+
+    <h2>ESP Project Eligibility Checker</h2>
+    <p>Masukkan alamat wallet (satu per baris):</p>
+    <textarea id="walletInput" placeholder="0x123...&#10;0x456..."></textarea>
+    <br>
+    <button onclick="checkEligibility()">Cek Eligibility</button>
+
+    <div id="results"></div>
+
+    <script>
+        async function checkEligibility() {
+            const input = document.getElementById('walletInput').value;
+            const addresses = input.split('\n').map(addr => addr.trim()).filter(addr => addr !== "");
+            const resultsDiv = document.getElementById('results');
+            
+            resultsDiv.innerHTML = "<h3>Hasil:</h3>";
+
+            if (addresses.length === 0) {
+                alert("Masukkan minimal satu wallet!");
+                return;
+            }
+
+            for (let address of addresses) {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'result-item';
+                itemDiv.innerHTML = `Checking <strong>${address}</strong>... <span class="loading">Sabar ya...</span>`;
+                resultsDiv.appendChild(itemDiv);
+
+                try {
+                    // API URL berdasarkan contoh yang Anda berikan
+                    const url = `https://portal-api.magna.so/api/v2/bbe62884-b0e3-4328-a20c-0544351402b5/submission/accounts?address=${address}`;
+                    
+                    const response = await fetch(url);
+                    const data = await response.json();
+
+                    // Mencari status isEligible dari array accounts
+                    const accountInfo = data.accounts.find(acc => acc.value.toLowerCase() === address.toLowerCase());
+                    
+                    if (accountInfo) {
+                        const isElig = accountInfo.isEligible;
+                        itemDiv.innerHTML = `
+                            Wallet: <strong>${address}</strong> | 
+                            Status: <span class="${isElig ? 'elig' : 'not-elig'}">${isElig ? 'ELIGIBLE' : 'NOT ELIGIBLE'}</span>
+                        `;
+                    } else {
+                        itemDiv.innerHTML = `Wallet: <strong>${address}</strong> | <span class="not-elig">Data tidak ditemukan</span>`;
+                    }
+
+                } catch (error) {
+                    itemDiv.innerHTML = `Wallet: <strong>${address}</strong> | <span class="not-elig">Error (Cek Koneksi/CORS)</span>`;
+                    console.error(error);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
