@@ -63,7 +63,6 @@
             try {
                 // Menggunakan corsproxy.io untuk menembus batasan CORS browser
                 const targetUrl = `https://portal-api.magna.so/api/v2/bbe62884-b0e3-4328-a20c-0544351402b5/submission/accounts?address=${wallet}`;
-                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
 
                 const response = await fetch(proxyUrl, {
                     method: 'GET',
