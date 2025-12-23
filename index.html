@@ -47,7 +47,7 @@
 
                 try {
                     // API URL berdasarkan contoh yang Anda berikan
-                    const url = `https://portal-api.magna.so/api/v2/bbe62884-b0e3-4328-a20c-0544351402b5/submission/accounts?address=${address}`;
+                    const url = `https://cors-anywhere.herokuapp.com/https://portal-api.magna.so/api/v2/bbe62884-b0e3-4328-a20c-0544351402b5/submission/accounts?address=${address}`;
                     
                     const response = await fetch(url);
                     const data = await response.json();
